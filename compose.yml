@@ -1,0 +1,46 @@
+services:
+  samba:
+    build:
+      context: .
+      dockerfile: dockerfile.samba
+      network: host
+    container_name: samba-nas
+    restart: unless-stopped
+
+    networks:
+      samba-net:
+        ipv4_address: 172.30.0.10
+    ports:
+      - "445:445"
+    volumes:
+      - ./samba-data:/share/samba
+
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - NET_BIND_SERVICE
+      - FOWNER
+      - SETGID
+      - SETUID
+    tmpfs:
+      - /tmp:size=64m
+    secrets:
+      - samba_pass_jayryz
+      - samba_pass_testuser1
+
+networks:
+  samba-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+          gateway: 172.30.0.1
+
+secrets:
+  samba_pass_jayryz:
+    file: ./secrets/jayryz.pass
+  samba_pass_testuser1:
+    file: ./secrets/testuser1.pass

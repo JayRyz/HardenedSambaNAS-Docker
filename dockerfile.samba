@@ -1,0 +1,26 @@
+#setting the base os of docker, using alpine, currently latest stable
+FROM alpine:3.23.2
+
+#installing samba, getting the latest version, shadow for hardening,
+#gosu is better than su since it wont spawn any extra processes
+RUN apk update && apk add --no-cache samba samba-common-tools shadow gosu
+
+#creating a user and a group for hardening, adding user to group
+RUN addgroup -g 4445 sambashare && adduser -D -s /sbin/nologin -u 4000 -G sambashare sambauser
+
+#making sure path of config exists
+RUN mkdir -p /etc/samba
+
+#creating the samba share and path for conf
+RUN mkdir -p /share/samba/cash /etc/samba && chown -R sambauser:sambashare /share/samba
+
+#copying the smb.conf and entrypoint script file into container
+COPY smb.conf /etc/samba/smb.conf
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+#Exposing the smb port 445 so we can connect from outside
+EXPOSE 445
+
+VOLUME ["/share/samba"]
+ENTRYPOINT ["/entrypoint.sh"]
